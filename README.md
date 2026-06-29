@@ -84,8 +84,6 @@ This allows the model to reconstruct censored or incomplete digit images.
 In this experiment, a single multivariate Gaussian distribution was fitted to digit images.  
 Each image was treated as a high-dimensional vector, and the model estimated a mean vector and covariance matrix for the data.
 
-![Single Gaussian](images/single_gaussian.png)
-
 **Conclusion:**  
 A single Gaussian gives a rough average representation of the digit data, but it fails to capture different handwriting styles. Since MNIST digits have large variation in shape, thickness, and orientation, one Gaussian is not expressive enough.
 
@@ -96,7 +94,7 @@ A single Gaussian gives a rough average representation of the digit data, but it
 To better model the variation in handwritten digits, multiple Gaussian distributions were used.  
 Each Gaussian component captures a different style or pattern present in the digit images.
 
-![Multiple Gaussians](images/multiple_gaussians.png)
+
 
 **Conclusion:**  
 Multiple Gaussians represent the data better than a single Gaussian. They can capture different modes in the dataset, such as slanted digits, thick digits, thin digits, and different writing styles.
@@ -108,7 +106,7 @@ Multiple Gaussians represent the data better than a single Gaussian. They can ca
 A Gaussian Mixture Model was trained using the Expectation-Maximization algorithm.  
 The EM algorithm alternates between assigning soft cluster probabilities and updating Gaussian parameters.
 
-![GMM Components](images/gmm_components.png)
+
 
 **Conclusion:**  
 The GMM successfully discovers hidden patterns in the data without using explicit style labels. The learned components show that generative models can separate different handwriting styles in an unsupervised way.
@@ -120,7 +118,7 @@ The GMM successfully discovers hidden patterns in the data without using explici
 A generative classifier was built by fitting probability distributions for each digit class.  
 For a test image, the model calculates the likelihood under each digit class and predicts the class with the highest probability.
 
-![Classification Results](images/classification_results.png)
+
 
 **Conclusion:**  
 The generative classifier is able to classify MNIST digits by modeling class-wise data distributions. Although it may not perform as well as modern neural networks, it provides a strong probabilistic interpretation of classification.
@@ -132,7 +130,6 @@ The generative classifier is able to classify MNIST digits by modeling class-wis
 In this experiment, a part of each digit image was removed or censored.  
 The goal was to test whether the model could use the visible pixels to infer the missing region.
 
-![Censored Digits](images/censored_digits.png)
 
 **Conclusion:**  
 Censoring important pixels makes classification harder because the central region often contains key digit structure. This experiment shows how missing features can reduce the amount of useful information available to the model.
@@ -144,7 +141,7 @@ Censoring important pixels makes classification harder because the central regio
 The missing pixels were reconstructed using conditional Gaussian distributions.  
 The model estimated the missing region based on the observed pixels and the learned covariance structure.
 
-![Reconstructed Digits](images/reconstructed_digits.png)
+
 
 **Conclusion:**  
 Conditional Gaussian reconstruction can recover meaningful digit shapes from incomplete images. The reconstructed digits are not always perfect, but they preserve important structural information and show the usefulness of probabilistic modeling.
@@ -154,9 +151,9 @@ Conditional Gaussian reconstruction can recover meaningful digit shapes from inc
 ## Repository Structure
 
 ```text
-ML_Digit_classification/
-├── lec15.ipynb
-├── handwritten_digits_generative_modelling.ipynb
+GENERATIVE-CLASSIFICATION/
+├── Generative_Classification_and_Pixel_Reconstruction.ipynb
+├── README.md
 ├── cs771/
 │   ├── __init__.py
 │   ├── plotData.py
@@ -166,14 +163,10 @@ ML_Digit_classification/
 │   ├── train-labels.idx1-ubyte
 │   ├── t10k-images.idx3-ubyte
 │   └── t10k-labels.idx1-ubyte
-├── images/
-│   ├── single_gaussian.png
-│   ├── multiple_gaussians.png
-│   ├── gmm_components.png
-│   ├── classification_results.png
-│   ├── censored_digits.png
-│   └── reconstructed_digits.png
-└── README.md
+└── images/
+    ├── classification_results.png
+    ├── missing_pixel_digits.png
+    └── reconstructed_digits.png
 ```
 
 ---
@@ -193,11 +186,11 @@ pip install numpy matplotlib scikit-learn jupyter
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/ML_Digit_classification.git
-cd ML_Digit_classification
+git clone https://github.com/<your-username>/GENERATIVE-CLASSIFICATION.git
+cd GENERATIVE-CLASSIFICATION
 ```
 
-Start Jupyter Notebook:
+Launch Jupyter Notebook:
 
 ```bash
 jupyter notebook
@@ -206,22 +199,47 @@ jupyter notebook
 Open and run:
 
 ```text
-lec15.ipynb
-handwritten_digits_generative_modelling.ipynb
+Generative_Classification_and_Pixel_Reconstruction.ipynb
 ```
 
 ---
 
-## Results
+## Results and Conclusions
 
-- A single Gaussian model provided a basic average representation of digit data.
-- Multiple Gaussians captured more variation in handwritten digit styles.
-- GMM with EM discovered hidden digit patterns without explicit labels.
-- The generative classifier classified digits using probability distributions.
-- Missing pixel reconstruction recovered useful digit structure from incomplete images.
-- The project demonstrates how probabilistic models can be used for both classification and reconstruction.
+### Generative Classification
+
+<p align="center">
+  <img src="images/classification_results.png" width="700"/>
+</p>
+
+The Generative Gaussian Classifier models each digit class using a Gaussian distribution and predicts labels using the Maximum A Posteriori (MAP) rule. The model achieved a **test accuracy of 85.73%** on the MNIST dataset.
+
+---
+
+### Missing Feature Reconstruction
+
+<p align="center">
+  <img src="images/missing_pixel_digits.png" width="700"/>
+</p>
+<p align="center">
+  <img src="images/reconstructed_digits.png" width="700"/>
+</p>
+
+Using conditional Gaussian inference, the model successfully reconstructed missing pixels from censored images. Even after censoring approximately **21%** of the central pixels, the classifier achieved **78.57%** accuracy, demonstrating the robustness of probabilistic generative models.
+
+---
+
+
+### Conclusions
+
+- Achieved **85.73%** classification accuracy on the MNIST test set using a **Generative Gaussian Classifier**.
+- Even after censoring approximately **21%** of the central pixels, the classifier achieved **78.57%** accuracy, demonstrating the robustness of generative models to missing features.
+- **Gaussian Mixture Models (GMMs)** effectively captured multiple handwriting styles, producing more realistic and diverse digit samples than a single Gaussian.
+- The **Expectation-Maximization (EM)** algorithm successfully learned latent Gaussian components without explicit style labels.
+- Conditional Gaussian inference enabled accurate **missing feature reconstruction**, demonstrating that generative models can perform both **classification** and **feature imputation** within a unified probabilistic framework.
 
 ---
 
 ## Acknowledgement
-This project repository was developed using MNIST dataset as part of the **CS771: Introduction to Machine Learning** course at the **Indian Institute of Technology Kanpur (IITK)** under **Professor Purushottam Kar**.
+
+This project was developed using the **MNIST** dataset as part of the **CS771: Introduction to Machine Learning** course at the **Indian Institute of Technology Kanpur (IIT Kanpur)** under the guidance of **Professor Purushottam Kar**.
