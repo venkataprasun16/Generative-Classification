@@ -1,492 +1,227 @@
-# Generative-Classification
-This project helps in understanding Generative classification, Missing feature reconstruction using Gaussian models, Gaussian Mixture Models, Expectation Maximisation.
-# Generative Classification on MNIST
+# Generative Digit Classification & Missing Feature Reconstruction
 
-## 1. Overview
+[![Dataset: MNIST](https://img.shields.io/badge/Dataset-MNIST-orange.svg)](https://yann.lecun.com/exdb/mnist/)
 
-This project studies **generative classification** using the MNIST handwritten digit dataset.
-
-The main idea of generative classification is:
-
-> Instead of directly learning a decision boundary between classes, we learn how each class generates data.
-
-For every digit class, we model the distribution of images belonging to that class:
-
-\[
-P(x \mid y = c)
-\]
-
-Then, for a test image \(x\), we predict the class that most likely generated it:
-
-\[
-\hat{y}
-=
-\arg\max_c P(y = c \mid x)
-\]
-
-Using Bayes rule:
-
-\[
-P(y = c \mid x)
-=
-\frac{P(x \mid y = c)P(y = c)}{P(x)}
-\]
-
-Since \(P(x)\) is the same for all classes during comparison, we use:
-
-\[
-\hat{y}
-=
-\arg\max_c P(x \mid y = c)P(y = c)
-\]
-
-In log form:
-
-\[
-\hat{y}
-=
-\arg\max_c
-\left[
-\log P(x \mid y = c) + \log P(y = c)
-\right]
-\]
-
-The notebook first explores Gaussian models for generating digit images, then uses them for classification and missing-pixel reconstruction.
+This project explores **generative machine learning models** for handwritten digit classification and reconstruction using the MNIST dataset.  
+It focuses on Gaussian models, Gaussian Mixture Models, Expectation-Maximization, and missing pixel reconstruction using conditional probability.<br>
+This project repository was developed as part of the **CS771: Introduction to Machine Learning** course at the **Indian Institute of Technology Kanpur (IITK)** under **Professor Purushottam Kar**.
 
 ---
 
-## 2. Mathematical Concepts Used
+## Project Overview
 
-### 2.1 Data Representation
+Instead of directly learning decision boundaries between digit classes, this project models the probability distribution of each digit class:
 
-Each MNIST image has size:
+$$
+P(X \mid Y)
+$$
 
-\[
-28 \times 28
-\]
-
-Each image is flattened into a vector:
-
-\[
-x \in \mathbb{R}^{784}
-\]
-
-So each pixel becomes one coordinate of the feature vector.
-
-Pixel values are normalized:
-
-\[
-x = \frac{x}{256}
-\]
+Using these learned distributions, the model can classify digits, discover handwriting styles, and reconstruct missing parts of digit images.
 
 ---
 
-### 2.2 Mean Image
+## Mathematical Concepts Involved
 
-The **mean image** is the pixel-wise average of all images in a dataset.
+### 1. Generative Classification
 
-If we have \(n\) images:
+Each digit class is modeled using a multivariate Gaussian distribution.
 
-\[
-x^1, x^2, \dots, x^n
-\]
+$$
+P(X \mid Y = c)
+$$
 
-then the mean image is:
-
-\[
-\mu =
-\frac{1}{n}
-\sum_{i=1}^{n} x^i
-\]
-
-For each pixel position, we average that pixel across all training images.
-
-If the dataset contains both `0`s and `4`s, the mean image looks like a blurry mixture of `0` and `4`.
-
-In class-wise generative classification, for class \(c\), the mean is:
-
-\[
-\mu_c =
-\frac{1}{n_c}
-\sum_{i:y^i=c} x^i
-\]
-
-where:
-
-- \(n_c\) is the number of training examples in class \(c\)
-- \(x^i\) is a training image
-- \(y^i\) is its label
-
-So for digit `4`:
-
-\[
-\mu_4 =
-\frac{1}{n_4}
-\sum_{i:y^i=4} x^i
-\]
-
-This gives the average image of all `4`s.
+A test image is classified by choosing the digit class with the highest likelihood.
 
 ---
 
-### 2.3 Covariance Matrix
+### 2. Multivariate Gaussian Distribution
 
-The covariance matrix tells us how different pixels vary together.
+A digit image is treated as a high-dimensional vector.  
+The Gaussian model uses a mean vector and covariance matrix to capture the structure of pixel values.
 
-For a full dataset:
-
-\[
-\Sigma =
-\frac{1}{n}
-\sum_{i=1}^{n}
-(x^i - \mu)(x^i - \mu)^T
-\]
-
-For class \(c\):
-
-\[
-\Sigma_c =
-\frac{1}{n_c}
-\sum_{i:y^i=c}
-(x^i - \mu_c)(x^i - \mu_c)^T
-\]
-
-Here:
-
-- \(\Sigma_c\) is the covariance matrix of class \(c\)
-- \(\mu_c\) is the mean image of class \(c\)
-- \(x^i - \mu_c\) measures how image \(i\) differs from the class mean
-
-Since each MNIST image has 784 pixels:
-
-\[
-\Sigma_c \in \mathbb{R}^{784 \times 784}
-\]
-
-The diagonal entries show how much each pixel varies by itself.
-
-The off-diagonal entries show how two different pixels vary together.
-
-Example:
-
-- If two nearby stroke pixels are often dark together, covariance is positive.
-- If one region is dark when another region is usually light, covariance is negative.
-- If two pixels are unrelated, covariance is close to zero.
-
-This is important because digit images are not independent pixels. They are structured strokes.
+$$
+X \sim \mathcal{N}(\mu, \Sigma)
+$$
 
 ---
 
-### 2.4 Standard Gaussian
+### 3. Gaussian Mixture Model
 
-A standard Gaussian model uses identity covariance:
+A single Gaussian may not represent all handwriting styles well.  
+A Gaussian Mixture Model represents data using multiple Gaussian components.
 
-\[
-x \sim \mathcal{N}(\mu, I)
-\]
-
-This assumes:
-
-- each pixel is independent
-- each pixel has variance 1
-- different pixels have covariance 0
-
-This is a very weak model for images because it cannot learn stroke structure.
-
-In the notebook, this produces noisy random images.
+$$
+P(X) = \sum_{k=1}^{K} \pi_k \mathcal{N}(X \mid \mu_k, \Sigma_k)
+$$
 
 ---
 
-### 2.5 Spherical Gaussian
+### 4. Expectation-Maximization Algorithm
 
-A spherical Gaussian uses scaled identity covariance:
+EM is used to estimate the parameters of a Gaussian Mixture Model.
 
-\[
-x \sim \mathcal{N}(\mu, \sigma^2 I)
-\]
-
-This is slightly more flexible than identity covariance because the variance can be learned, but it still assumes pixels are independent.
-
-In the `7` and inverted `7` experiment, the notebook first uses:
-
-\[
-\Sigma = \sigma^2 I
-\]
-
-This performs poorly because it cannot capture relationships between pixel regions.
+- **E-Step:** Estimate the probability that each data point belongs to each Gaussian component.
+- **M-Step:** Update the mean, covariance, and mixture weights using those probabilities.
 
 ---
 
-### 2.6 Full Gaussian
+### 5. Missing Feature Reconstruction
 
-A full Gaussian learns both the mean and the covariance matrix:
+When some pixels are removed from an image, conditional Gaussian distributions are used to estimate the missing values.
 
-\[
-x \sim \mathcal{N}(\mu, \Sigma)
-\]
+$$
+P(X_{\text{missing}} \mid X_{\text{observed}})
+$$
 
-This is more powerful because it captures how pixels vary together.
-
-The Gaussian density is:
-
-\[
-P(x)
-=
-\frac{1}
-{\sqrt{(2\pi)^d |\Sigma|}}
-\exp
-\left(
--\frac{1}{2}
-(x-\mu)^T
-\Sigma^{-1}
-(x-\mu)
-\right)
-\]
-
-where:
-
-- \(d = 784\)
-- \(\mu\) is the mean image
-- \(\Sigma\) is the covariance matrix
-
-The term:
-
-\[
-(x-\mu)^T \Sigma^{-1} (x-\mu)
-\]
-
-is a Mahalanobis distance. It measures distance from the mean while considering covariance.
+This allows the model to reconstruct censored or incomplete digit images.
 
 ---
 
-### 2.7 Class Prior Probability
+## Experiments Performed
 
-The prior probability of class \(c\) is:
+### 1. Fitting a Single Gaussian Model
 
-\[
-P(y=c)
-=
-\frac{n_c}{n}
-\]
+In this experiment, a single multivariate Gaussian distribution was fitted to digit images.  
+Each image was treated as a high-dimensional vector, and the model estimated a mean vector and covariance matrix for the data.
 
-where:
+![Single Gaussian](images/single_gaussian.png)
 
-- \(n_c\) is the number of training examples in class \(c\)
-- \(n\) is the total number of training examples
-
-This tells us how common a class is in the dataset.
-
-For example, if digit `1` appears often, then:
-
-\[
-P(y=1)
-\]
-
-will be relatively high.
+**Conclusion:**  
+A single Gaussian gives a rough average representation of the digit data, but it fails to capture different handwriting styles. Since MNIST digits have large variation in shape, thickness, and orientation, one Gaussian is not expressive enough.
 
 ---
 
-### 2.8 Generative Classification Rule
+### 2. Fitting Multiple Gaussians
 
-For each class \(c\), we learn:
+To better model the variation in handwritten digits, multiple Gaussian distributions were used.  
+Each Gaussian component captures a different style or pattern present in the digit images.
 
-\[
-P(x \mid y=c)
-=
-\mathcal{N}(x \mid \mu_c, \Sigma_c)
-\]
+![Multiple Gaussians](images/multiple_gaussians.png)
 
-Then we classify using:
-
-\[
-\hat{y}
-=
-\arg\max_c
-P(x \mid y=c)P(y=c)
-\]
-
-In log form:
-
-\[
-\hat{y}
-=
-\arg\max_c
-\left[
-\log P(x \mid y=c)
-+
-\log P(y=c)
-\right]
-\]
-
-For a Gaussian class conditional distribution:
-
-\[
-\log P(x \mid y=c)
-=
--\frac{1}{2}
-\log |\Sigma_c|
--
-\frac{1}{2}
-(x-\mu_c)^T
-\Sigma_c^{-1}
-(x-\mu_c)
-+
-\text{constant}
-\]
-
-The constant can be ignored during classification because it is the same for all classes.
-
-So the class score becomes:
-
-\[
-\text{score}(c)
-=
--\frac{1}{2}
-\log |\Sigma_c|
--
-\frac{1}{2}
-(x-\mu_c)^T
-\Sigma_c^{-1}
-(x-\mu_c)
-+
-\log P(y=c)
-\]
-
-The predicted class is the one with the highest score.
+**Conclusion:**  
+Multiple Gaussians represent the data better than a single Gaussian. They can capture different modes in the dataset, such as slanted digits, thick digits, thin digits, and different writing styles.
 
 ---
 
-### 2.9 Gaussian Mixture Model
+### 3. Gaussian Mixture Model using EM Algorithm
 
-A single Gaussian may not capture all variations in a dataset.
+A Gaussian Mixture Model was trained using the Expectation-Maximization algorithm.  
+The EM algorithm alternates between assigning soft cluster probabilities and updating Gaussian parameters.
 
-For example, digit `4` may have many writing styles:
+![GMM Components](images/gmm_components.png)
 
-- upright `4`
-- slanted `4`
-- open-top `4`
-- closed-top `4`
-
-A Gaussian Mixture Model uses multiple Gaussians:
-
-\[
-P(x)
-=
-\sum_{c=1}^{C}
-P(z=c)P(x \mid z=c)
-\]
-
-where:
-
-- \(C\) is the number of components
-- \(z\) is a latent variable
-- \(z=c\) means component \(c\) generated the point
-
-Each component has its own mean and covariance:
-
-\[
-\mu_c, \Sigma_c
-\]
+**Conclusion:**  
+The GMM successfully discovers hidden patterns in the data without using explicit style labels. The learned components show that generative models can separate different handwriting styles in an unsupervised way.
 
 ---
 
-### 2.10 Latent Variable
+### 4. Generative Digit Classification
 
-A latent variable is a hidden variable.
+A generative classifier was built by fitting probability distributions for each digit class.  
+For a test image, the model calculates the likelihood under each digit class and predicts the class with the highest probability.
 
-In a Gaussian mixture model:
+![Classification Results](images/classification_results.png)
 
-\[
-z_i
-\]
-
-represents which Gaussian component generated data point \(x^i\).
-
-We do not observe \(z_i\), so we estimate it.
-
-For example:
-
-\[
-z_i = 3
-\]
-
-means image \(i\) was generated by component 3.
+**Conclusion:**  
+The generative classifier is able to classify MNIST digits by modeling class-wise data distributions. Although it may not perform as well as modern neural networks, it provides a strong probabilistic interpretation of classification.
 
 ---
 
-### 2.11 Expectation Maximization Algorithm
+### 5. Missing Pixel Censoring
 
-EM is used when the model contains latent variables.
+In this experiment, a part of each digit image was removed or censored.  
+The goal was to test whether the model could use the visible pixels to infer the missing region.
 
-The goal is to maximize:
+![Censored Digits](images/censored_digits.png)
 
-\[
-\sum_{i=1}^{n}
-\log
-\left(
-\sum_{c=1}^{C}
-P(x^i, z_i=c \mid \theta)
-\right)
-\]
+**Conclusion:**  
+Censoring important pixels makes classification harder because the central region often contains key digit structure. This experiment shows how missing features can reduce the amount of useful information available to the model.
 
-This is difficult because there is a log of a sum.
+---
 
-EM solves this by repeating two steps.
+### 6. Missing Feature Reconstruction
 
-#### E-Step
+The missing pixels were reconstructed using conditional Gaussian distributions.  
+The model estimated the missing region based on the observed pixels and the learned covariance structure.
 
-Compute responsibilities:
+![Reconstructed Digits](images/reconstructed_digits.png)
 
-\[
-q_c^i
-=
-P(z_i = c \mid x^i, \theta^{old})
-\]
+**Conclusion:**  
+Conditional Gaussian reconstruction can recover meaningful digit shapes from incomplete images. The reconstructed digits are not always perfect, but they preserve important structural information and show the usefulness of probabilistic modeling.
 
-This tells us how likely data point \(i\) belongs to component \(c\).
+---
 
-For each point:
-
-\[
-\sum_{c=1}^{C} q_c^i = 1
-\]
-
-#### M-Step
-
-Update model parameters using the responsibilities as weights.
-
-The mean update is:
-
-\[
-\mu_c
-=
-\frac{
-\sum_{i=1}^{n} q_c^i x^i
-}
-{
-\sum_{i=1}^{n} q_c^i
-}
-\]
-
-The covariance update is:
-
-\[
-\Sigma_c
-=
-\frac{
-\sum_{i=1}^{n}
-q_c^i
-(x^i-\mu_c)(x^i-\mu_c)^T
-}
-{
-\sum_{i=1}^{n} q_c^i
-}
-\]
-
-So EM is:
+## Repository Structure
 
 ```text
-Initialize means and covariances
-E-step: compute soft assignments q
-M-step: update means and covariances using q
-Repeat
+ML_Digit_classification/
+├── lec15.ipynb
+├── handwritten_digits_generative_modelling.ipynb
+├── cs771/
+│   ├── __init__.py
+│   ├── plotData.py
+│   └── utils.py
+├── mnist/
+│   ├── train-images.idx3-ubyte
+│   ├── train-labels.idx1-ubyte
+│   ├── t10k-images.idx3-ubyte
+│   └── t10k-labels.idx1-ubyte
+├── images/
+│   ├── single_gaussian.png
+│   ├── multiple_gaussians.png
+│   ├── gmm_components.png
+│   ├── classification_results.png
+│   ├── censored_digits.png
+│   └── reconstructed_digits.png
+└── README.md
+```
+
+---
+
+## Requirements
+
+Install the required Python libraries:
+
+```bash
+pip install numpy matplotlib scikit-learn jupyter
+```
+
+---
+
+## How to Run
+
+Clone the repository:
+
+```bash
+git clone https://github.com/your-username/ML_Digit_classification.git
+cd ML_Digit_classification
+```
+
+Start Jupyter Notebook:
+
+```bash
+jupyter notebook
+```
+
+Open and run:
+
+```text
+lec15.ipynb
+handwritten_digits_generative_modelling.ipynb
+```
+
+---
+
+## Results
+
+- A single Gaussian model provided a basic average representation of digit data.
+- Multiple Gaussians captured more variation in handwritten digit styles.
+- GMM with EM discovered hidden digit patterns without explicit labels.
+- The generative classifier classified digits using probability distributions.
+- Missing pixel reconstruction recovered useful digit structure from incomplete images.
+- The project demonstrates how probabilistic models can be used for both classification and reconstruction.
+
+---
+
+## Acknowledgement
+This project repository was developed using MNIST dataset as part of the **CS771: Introduction to Machine Learning** course at the **Indian Institute of Technology Kanpur (IITK)** under **Professor Purushottam Kar**.
